@@ -108,7 +108,8 @@ void *calc_mandel(void *p)
 	int i, j, iter, min, max;
 	rgb_t *px;
 	double x, y, zx, zy, zx2, zy2;
-	min = max_iter; max = 0;
+	min = max_iter;
+    max = 0;
     
     int blockSize = height / NUMBER_OF_THREADS;
     int myThreadNum = *(int *) p;
@@ -138,8 +139,8 @@ void *calc_mandel(void *p)
 	}
     
 	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++)
-		for (j = 0, px = tex[i]; j  < width; j++, px++)
-			hsv_to_rgb(*(unsigned short*)px, min, max, px);
+		for (j = 0, px = tex[i]; j < width; j++, px++)
+			hsv_to_rgb(*(unsigned short *)px, min, max, px);
     
     pthread_exit(0);
 }
