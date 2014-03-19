@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
 
 #ifdef __APPLE__
     #include <OpenGL/gl.h>
@@ -22,6 +23,8 @@
     #include <GL/glu.h>
     #include <GL/glut.h>
 #endif
+
+#define NUMBER_OF_THREADS   4
 
 void set_texture();
 
@@ -75,6 +78,117 @@ void screen_dump()
 	printf("%s written\n", fn);
 }
 
+void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
+{
+	if (min == max) max = min + 1;
+	if (invert) hue = max - (hue - min);
+	if (!saturation) {
+		p->r = p->g = p->b = 255 * (max - hue) / (max - min);
+		return;
+	}
+	double h = fmod(color_rotate + 1e-4 + 4.0 * (hue - min) / (max - min), 6);
+#	define VAL 255
+	double c = VAL * saturation;
+	double X = c * (1 - fabs(fmod(h, 2) - 1));
+    
+	p->r = p->g = p->b = 0;
+    
+	switch((int)h) {
+        case 0: p->r = c; p->g = X; return;
+        case 1:	p->r = X; p->g = c; return;
+        case 2: p->g = c; p->b = X; return;
+        case 3: p->g = X; p->b = c; return;
+        case 4: p->r = X; p->b = c; return;
+        default:p->r = c; p->b = X;
+	}
+}
+
+void *calc_mandel(void *p)
+{
+	int i, j, iter, min, max;
+	rgb_t *px;
+	double x, y, zx, zy, zx2, zy2;
+	min = max_iter; max = 0;
+    
+    int blockSize = height / NUMBER_OF_THREADS;
+    int myThreadNum = *(int *) p;
+    
+	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++) {
+		px = tex[i];
+		y = (i - height/2) * scale + cy;
+		for (j = 0; j < width; j++, px++) {
+			x = (j - width/2) * scale + cx;
+			iter = 0;
+            
+			zx = hypot(x - .25, y);
+			if (x < zx - 2 * zx * zx + .25) iter = max_iter;
+			if ((x + 1)*(x + 1) + y * y < 1/16) iter = max_iter;
+            
+			zx = zy = zx2 = zy2 = 0;
+			for (; iter < max_iter && zx2 + zy2 < 4; iter++) {
+				zy = 2 * zx * zy + y;
+				zx = zx2 - zy2 + x;
+				zx2 = zx * zx;
+				zy2 = zy * zy;
+			}
+			if (iter < min) min = iter;
+			if (iter > max) max = iter;
+			*(unsigned short *)px = iter;
+		}
+	}
+    
+	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++)
+		for (j = 0, px = tex[i]; j  < width; j++, px++)
+			hsv_to_rgb(*(unsigned short*)px, min, max, px);
+    
+    pthread_exit(0);
+}
+
+void alloc_tex()
+{
+	int i, ow = tex_w, oh = tex_h;
+    
+	for (tex_w = 1; tex_w < width;  tex_w <<= 1);
+	for (tex_h = 1; tex_h < height; tex_h <<= 1);
+    
+	if (tex_h != oh || tex_w != ow)
+		tex = realloc(tex, tex_h * tex_w * 3 + tex_h * sizeof(rgb_t*));
+    
+	for (tex[0] = (rgb_t *)(tex + tex_h), i = 1; i < tex_h; i++)
+		tex[i] = tex[i - 1] + tex_w;
+}
+
+void set_texture()
+{
+    int hThreads[NUMBER_OF_THREADS];
+	pthread_t tId[NUMBER_OF_THREADS];
+    int tNum[NUMBER_OF_THREADS];
+	int i;
+    
+    
+	alloc_tex();
+    
+    // Create the threads
+	for (i = 0; i < NUMBER_OF_THREADS; i++) {
+        tNum[i] = i;
+		hThreads[i] = pthread_create(&tId[i], NULL, calc_mandel, &tNum[i]);
+    }
+    
+    // Wait for all threads to finish
+    for (i = 0; i < NUMBER_OF_THREADS; i++) {
+        pthread_join(tId[i], NULL);
+    }
+    
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, tex_w, tex_h,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, tex[0]);
+    
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	render();
+}
+
 void keypress(unsigned char key, int x, int y)
 {
 	switch(key) {
@@ -107,95 +221,6 @@ void keypress(unsigned char key, int x, int y)
         case ' ':	invert = !invert;
 	}
 	set_texture();
-}
-
-void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
-{
-	if (min == max) max = min + 1;
-	if (invert) hue = max - (hue - min);
-	if (!saturation) {
-		p->r = p->g = p->b = 255 * (max - hue) / (max - min);
-		return;
-	}
-	double h = fmod(color_rotate + 1e-4 + 4.0 * (hue - min) / (max - min), 6);
-#	define VAL 255
-	double c = VAL * saturation;
-	double X = c * (1 - fabs(fmod(h, 2) - 1));
-    
-	p->r = p->g = p->b = 0;
-    
-	switch((int)h) {
-        case 0: p->r = c; p->g = X; return;
-        case 1:	p->r = X; p->g = c; return;
-        case 2: p->g = c; p->b = X; return;
-        case 3: p->g = X; p->b = c; return;
-        case 4: p->r = X; p->b = c; return;
-        default:p->r = c; p->b = X;
-	}
-}
-
-void calc_mandel()
-{
-	int i, j, iter, min, max;
-	rgb_t *px;
-	double x, y, zx, zy, zx2, zy2;
-	min = max_iter; max = 0;
-	for (i = 0; i < height; i++) {
-		px = tex[i];
-		y = (i - height/2) * scale + cy;
-		for (j = 0; j < width; j++, px++) {
-			x = (j - width/2) * scale + cx;
-			iter = 0;
-            
-			zx = hypot(x - .25, y);
-			if (x < zx - 2 * zx * zx + .25) iter = max_iter;
-			if ((x + 1)*(x + 1) + y * y < 1/16) iter = max_iter;
-            
-			zx = zy = zx2 = zy2 = 0;
-			for (; iter < max_iter && zx2 + zy2 < 4; iter++) {
-				zy = 2 * zx * zy + y;
-				zx = zx2 - zy2 + x;
-				zx2 = zx * zx;
-				zy2 = zy * zy;
-			}
-			if (iter < min) min = iter;
-			if (iter > max) max = iter;
-			*(unsigned short *)px = iter;
-		}
-	}
-    
-	for (i = 0; i < height; i++)
-		for (j = 0, px = tex[i]; j  < width; j++, px++)
-			hsv_to_rgb(*(unsigned short*)px, min, max, px);
-}
-
-void alloc_tex()
-{
-	int i, ow = tex_w, oh = tex_h;
-    
-	for (tex_w = 1; tex_w < width;  tex_w <<= 1);
-	for (tex_h = 1; tex_h < height; tex_h <<= 1);
-    
-	if (tex_h != oh || tex_w != ow)
-		tex = realloc(tex, tex_h * tex_w * 3 + tex_h * sizeof(rgb_t*));
-    
-	for (tex[0] = (rgb_t *)(tex + tex_h), i = 1; i < tex_h; i++)
-		tex[i] = tex[i - 1] + tex_w;
-}
-
-void set_texture()
-{
-	alloc_tex();
-	calc_mandel();
-    
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, tex_w, tex_h,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, tex[0]);
-    
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	render();
 }
 
 void mouseclick(int button, int state, int x, int y)
