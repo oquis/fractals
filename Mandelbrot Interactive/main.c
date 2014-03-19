@@ -39,7 +39,7 @@ double cx = -.6, cy = 0;
 int color_rotate = 0;
 int saturation = 1;
 int invert = 0;
-int max_iter = 256;
+int max_iter = 7;
 
 void render()
 {
@@ -72,20 +72,28 @@ void screen_dump()
 	sprintf(fn, "screen%03d.ppm", dump++);
 	FILE *fp = fopen(fn, "w");
 	fprintf(fp, "P6\n%d %d\n255\n", width, height);
-	for (i = height - 1; i >= 0; i--)
+	for (i = height - 1; i >= 0; i--) {
 		fwrite(tex[i], 1, width * 3, fp);
+    }
 	fclose(fp);
 	printf("%s written\n", fn);
 }
 
 void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 {
-	if (min == max) max = min + 1;
-	if (invert) hue = max - (hue - min);
+	if (min == max) {
+        max = min + 1;
+    }
+    
+	if (invert) {
+        hue = max - (hue - min);
+    }
+    
 	if (!saturation) {
 		p->r = p->g = p->b = 255 * (max - hue) / (max - min);
 		return;
 	}
+    
 	double h = fmod(color_rotate + 1e-4 + 4.0 * (hue - min) / (max - min), 6);
 #	define VAL 255
 	double c = VAL * saturation;
@@ -94,12 +102,30 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 	p->r = p->g = p->b = 0;
     
 	switch((int)h) {
-        case 0: p->r = c; p->g = X; return;
-        case 1:	p->r = X; p->g = c; return;
-        case 2: p->g = c; p->b = X; return;
-        case 3: p->g = X; p->b = c; return;
-        case 4: p->r = X; p->b = c; return;
-        default:p->r = c; p->b = X;
+        case 0:
+            p->r = c;
+            p->g = X;
+            break;
+        case 1:
+            p->r = X;
+            p->g = c;
+            break;
+        case 2:
+            p->g = c;
+            p->b = X;
+            break;
+        case 3:
+            p->g = X;
+            p->b = c;
+            break;
+        case 4:
+            p->r = X;
+            p->b = c;
+            break;
+        default:
+            p->r = c;
+            p->b = X;
+            break;
 	}
 }
 
@@ -112,7 +138,10 @@ void *calc_mandel(void *p)
     min = max_iter;
     max = 0;
     
-	for (i = 0; i < height; i++) {
+    int blockSize = height / NUMBER_OF_THREADS;
+    int myThreadNum = *(int *) p;
+    
+	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++) {
 		px = tex[i];
 		y = (i - height/2) * scale + cy;
         
@@ -138,9 +167,11 @@ void *calc_mandel(void *p)
 		}
 	}
     
-	for (i = 0; i < height; i++)
+	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++)
 		for (j = 0, px = tex[i]; j < width; j++, px++)
 			hsv_to_rgb(*(unsigned short *)px, min, max, px);
+    
+    pthread_exit(0);
 }
 
 void alloc_tex()
@@ -166,7 +197,6 @@ void set_texture()
     int tNum[NUMBER_OF_THREADS];
 	int i;
     
-    
 	alloc_tex();
     
     // Create the threads
@@ -182,45 +212,67 @@ void set_texture()
     
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, tex_w, tex_h,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, tex[0]);
-    
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, tex_w, tex_h, 0, GL_RGB, GL_UNSIGNED_BYTE, tex[0]);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
 	render();
 }
 
 void keypress(unsigned char key, int x, int y)
 {
 	switch(key) {
-        case 'q':	glFinish();
+        case 'q':
+            glFinish();
 			glutDestroyWindow(gwin);
 			return;
-        case 27:	scale = 1./256; cx = -.6; cy = 0; break;
             
-        case 'r':	color_rotate = (color_rotate + 1) % 6;
+        case 27:
+            scale = 1./256;
+            cx = -.6;
+            cy = 0;
+            break;
+            
+        case 'r':
+            color_rotate = (color_rotate + 1) % 6;
 			break;
             
         case '>': case '.':
 			max_iter += 128;
-			if (max_iter > 1 << 15) max_iter = 1 << 15;
+			if (max_iter > 1 << 15) {
+                max_iter = 1 << 15;
+            }
 			printf("max iter: %d\n", max_iter);
 			break;
             
         case '<': case ',':
 			max_iter -= 128;
-			if (max_iter < 128) max_iter = 128;
+			if (max_iter < 128) {
+                max_iter = 128;
+            }
 			printf("max iter: %d\n", max_iter);
 			break;
             
-        case 'c':	saturation = 1 - saturation;
+        case 'c':
+            saturation = 1 - saturation;
 			break;
             
-        case 's':	screen_dump(); return;
-        case 'z':	max_iter = 4096; break;
-        case 'x':	max_iter = 128; break;
-        case ' ':	invert = !invert;
+        case 's':
+            screen_dump();
+            return;
+            
+        case 'z':
+            max_iter = 4096;
+            break;
+            
+        case 'x':
+            max_iter = 128;
+            break;
+            
+        case ' ':
+            invert = !invert;
 	}
+    
 	set_texture();
 }
 
@@ -233,14 +285,18 @@ void mouseclick(int button, int state, int x, int y)
     
 	switch(button) {
         case GLUT_LEFT_BUTTON: /* zoom in */
-            if (scale > fabs(x) * 1e-16 && scale > fabs(y) * 1e-16)
+            if (scale > fabs(x) * 1e-16 && scale > fabs(y) * 1e-16) {
                 scale /= 2;
+            }
             break;
+            
         case GLUT_RIGHT_BUTTON: /* zoom out */
             scale *= 2;
             break;
+            
             /* any other button recenters */
 	}
+    
 	set_texture();
 }
 
