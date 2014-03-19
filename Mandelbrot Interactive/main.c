@@ -139,10 +139,14 @@ void calc_mandel()
 	int i, j, iter, min, max;
 	rgb_t *px;
 	double x, y, zx, zy, zx2, zy2;
-	min = max_iter; max = 0;
+	
+    min = max_iter;
+    max = 0;
+    
 	for (i = 0; i < height; i++) {
 		px = tex[i];
 		y = (i - height/2) * scale + cy;
+        
 		for (j = 0; j < width; j++, px++) {
 			x = (j - width/2) * scale + cx;
 			iter = 0;
@@ -158,6 +162,7 @@ void calc_mandel()
 				zx2 = zx * zx;
 				zy2 = zy * zy;
 			}
+            
 			if (iter < min) min = iter;
 			if (iter > max) max = iter;
 			*(unsigned short *)px = iter;
@@ -165,13 +170,15 @@ void calc_mandel()
 	}
     
 	for (i = 0; i < height; i++)
-		for (j = 0, px = tex[i]; j  < width; j++, px++)
-			hsv_to_rgb(*(unsigned short*)px, min, max, px);
+		for (j = 0, px = tex[i]; j < width; j++, px++)
+			hsv_to_rgb(*(unsigned short *)px, min, max, px);
 }
 
 void alloc_tex()
 {
-	int i, ow = tex_w, oh = tex_h;
+	int i,
+        ow = tex_w,
+        oh = tex_h;
     
 	for (tex_w = 1; tex_w < width;  tex_w <<= 1);
 	for (tex_h = 1; tex_h < height; tex_h <<= 1);
