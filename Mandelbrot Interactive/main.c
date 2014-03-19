@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
 
 #ifdef __APPLE__
     #include <OpenGL/gl.h>
@@ -22,6 +23,8 @@
     #include <GL/glu.h>
     #include <GL/glut.h>
 #endif
+
+#define NUMBER_OF_THREADS   4
 
 void set_texture();
 
@@ -75,40 +78,6 @@ void screen_dump()
 	printf("%s written\n", fn);
 }
 
-void keypress(unsigned char key, int x, int y)
-{
-	switch(key) {
-        case 'q':	glFinish();
-			glutDestroyWindow(gwin);
-			return;
-        case 27:	scale = 1./256; cx = -.6; cy = 0; break;
-            
-        case 'r':	color_rotate = (color_rotate + 1) % 6;
-			break;
-            
-        case '>': case '.':
-			max_iter += 128;
-			if (max_iter > 1 << 15) max_iter = 1 << 15;
-			printf("max iter: %d\n", max_iter);
-			break;
-            
-        case '<': case ',':
-			max_iter -= 128;
-			if (max_iter < 128) max_iter = 128;
-			printf("max iter: %d\n", max_iter);
-			break;
-            
-        case 'c':	saturation = 1 - saturation;
-			break;
-            
-        case 's':	screen_dump(); return;
-        case 'z':	max_iter = 4096; break;
-        case 'x':	max_iter = 128; break;
-        case ' ':	invert = !invert;
-	}
-	set_texture();
-}
-
 void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 {
 	if (min == max) max = min + 1;
@@ -134,7 +103,7 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 	}
 }
 
-void calc_mandel()
+void *calc_mandel(void *p)
 {
 	int i, j, iter, min, max;
 	rgb_t *px;
@@ -192,8 +161,24 @@ void alloc_tex()
 
 void set_texture()
 {
+    int hThreads[NUMBER_OF_THREADS];
+	pthread_t tId[NUMBER_OF_THREADS];
+    int tNum[NUMBER_OF_THREADS];
+	int i;
+    
+    
 	alloc_tex();
-	calc_mandel();
+    
+    // Create the threads
+	for (i = 0; i < NUMBER_OF_THREADS; i++) {
+        tNum[i] = i;
+		hThreads[i] = pthread_create(&tId[i], NULL, calc_mandel, &tNum[i]);
+    }
+    
+    // Wait for all threads to finish
+    for (i = 0; i < NUMBER_OF_THREADS; i++) {
+        pthread_join(tId[i], NULL);
+    }
     
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -203,6 +188,40 @@ void set_texture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	render();
+}
+
+void keypress(unsigned char key, int x, int y)
+{
+	switch(key) {
+        case 'q':	glFinish();
+			glutDestroyWindow(gwin);
+			return;
+        case 27:	scale = 1./256; cx = -.6; cy = 0; break;
+            
+        case 'r':	color_rotate = (color_rotate + 1) % 6;
+			break;
+            
+        case '>': case '.':
+			max_iter += 128;
+			if (max_iter > 1 << 15) max_iter = 1 << 15;
+			printf("max iter: %d\n", max_iter);
+			break;
+            
+        case '<': case ',':
+			max_iter -= 128;
+			if (max_iter < 128) max_iter = 128;
+			printf("max iter: %d\n", max_iter);
+			break;
+            
+        case 'c':	saturation = 1 - saturation;
+			break;
+            
+        case 's':	screen_dump(); return;
+        case 'z':	max_iter = 4096; break;
+        case 'x':	max_iter = 128; break;
+        case ' ':	invert = !invert;
+	}
+	set_texture();
 }
 
 void mouseclick(int button, int state, int x, int y)
