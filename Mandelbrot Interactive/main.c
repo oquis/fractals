@@ -24,7 +24,7 @@
     #include <GL/glut.h>
 #endif
 
-#define NUMBER_OF_THREADS   4
+#define NUMBER_OF_THREADS   8
 
 void set_texture();
 
@@ -129,14 +129,15 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 	}
 }
 
+int mandel_min, mandel_max = 0;
 void *calc_mandel(void *p)
 {
-	int i, j, iter, min, max;
+	int i, j, iter; //, min, max;
 	rgb_t *px;
 	double x, y, zx, zy, zx2, zy2;
 	
-    min = max_iter;
-    max = 0;
+    mandel_min = max_iter;
+//    max = 0;
     
     int blockSize = height / NUMBER_OF_THREADS;
     int myThreadNum = *(int *) p;
@@ -161,15 +162,15 @@ void *calc_mandel(void *p)
 				zy2 = zy * zy;
 			}
             
-			if (iter < min) min = iter;
-			if (iter > max) max = iter;
+			if (iter < mandel_min) mandel_min = iter;
+			if (iter > mandel_max) mandel_max = iter;
 			*(unsigned short *)px = iter;
 		}
 	}
     
 	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++)
 		for (j = 0, px = tex[i]; j < width; j++, px++)
-			hsv_to_rgb(*(unsigned short *)px, min, max, px);
+			hsv_to_rgb(*(unsigned short *)px, mandel_min, mandel_max, px);
     
     pthread_exit(0);
 }
