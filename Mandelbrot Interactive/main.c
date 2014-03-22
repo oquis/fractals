@@ -39,7 +39,8 @@ double cx = -.6, cy = 0;
 int color_rotate = 0;
 int saturation = 1;
 int invert = 0;
-int max_iter = 7;
+int max_iter = 8;
+int mandel_min, mandel_max;
 
 void render()
 {
@@ -129,15 +130,11 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 	}
 }
 
-int mandel_min, mandel_max = 0;
 void *calc_mandel(void *p)
 {
-	int i, j, iter; //, min, max;
+	int i, j, iter;
 	rgb_t *px;
 	double x, y, zx, zy, zx2, zy2;
-	
-    mandel_min = max_iter;
-//    max = 0;
     
     int blockSize = height / NUMBER_OF_THREADS;
     int myThreadNum = *(int *) p;
@@ -199,6 +196,9 @@ void set_texture()
 	int i;
     
 	alloc_tex();
+    
+    mandel_max = 0;
+    mandel_min = max_iter;
     
     // Create the threads
 	for (i = 0; i < NUMBER_OF_THREADS; i++) {
