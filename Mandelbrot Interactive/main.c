@@ -25,8 +25,10 @@
 #endif
 
 #define NUMBER_OF_THREADS   8
+#define WINDOW_WIDTH        1330
+#define WINDOW_HEIGHT       800
 
-void set_texture();
+void set_texture ();
 
 typedef struct {unsigned char r, g, b;} rgb_t;
 rgb_t **tex = 0;
@@ -42,10 +44,10 @@ int invert = 0;
 int max_iter = 8;
 int mandel_min, mandel_max;
 
-void render()
+void render ()
 {
-	double	x = (double)width /tex_w,
-    y = (double)height/tex_h;
+	double x = (double) width / tex_w;
+    double y = (double) height / tex_h;
     
 	glClear(GL_COLOR_BUFFER_BIT);
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
@@ -66,7 +68,7 @@ void render()
 }
 
 int dump = 1;
-void screen_dump()
+void screen_dump ()
 {
 	char fn[100];
 	int i;
@@ -80,7 +82,7 @@ void screen_dump()
 	printf("%s written\n", fn);
 }
 
-void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
+void hsv_to_rgb (int hue, int min, int max, rgb_t *p)
 {
 	if (min == max) {
         max = min + 1;
@@ -130,7 +132,7 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 	}
 }
 
-void *calc_mandel(void *p)
+void *calc_mandel (void *p)
 {
 	int i, j, iter;
 	rgb_t *px;
@@ -172,7 +174,7 @@ void *calc_mandel(void *p)
     pthread_exit(0);
 }
 
-void alloc_tex()
+void alloc_tex ()
 {
 	int i,
         ow = tex_w,
@@ -188,7 +190,7 @@ void alloc_tex()
 		tex[i] = tex[i - 1] + tex_w;
 }
 
-void set_texture()
+void set_texture ()
 {
     int hThreads[NUMBER_OF_THREADS];
 	pthread_t tId[NUMBER_OF_THREADS];
@@ -220,7 +222,7 @@ void set_texture()
 	render();
 }
 
-void keypress(unsigned char key, int x, int y)
+void keypress (unsigned char key, int x, int y)
 {
 	switch(key) {
         case 'q':
@@ -258,7 +260,7 @@ void keypress(unsigned char key, int x, int y)
             saturation = 1 - saturation;
 			break;
             
-        case 's':
+        case 'p':
             screen_dump();
             return;
             
@@ -269,6 +271,26 @@ void keypress(unsigned char key, int x, int y)
         case 'x':
             max_iter = 128;
             break;
+        
+        case 'a':
+            cx -= 4 * scale;
+            break;
+        case 'd':
+            cx += 4 * scale;
+            break;
+        case 's':
+            cy -= 4 * scale;
+            break;
+        case 'w':
+            cy += 4 * scale;
+            break;
+        
+        case '-':
+            scale *= 2;
+            break;
+        case '+':
+            scale /= 2;
+            break;
             
         case ' ':
             invert = !invert;
@@ -277,12 +299,12 @@ void keypress(unsigned char key, int x, int y)
 	set_texture();
 }
 
-void mouseclick(int button, int state, int x, int y)
+void mouseclick (int button, int state, int x, int y)
 {
 	if (state != GLUT_UP) return;
     
 	cx += (x - width / 2) * scale;
-	cy -= (y - height/ 2) * scale;
+	cy -= (y - height / 2) * scale;
     
 	switch(button) {
         case GLUT_LEFT_BUTTON: /* zoom in */
@@ -301,7 +323,7 @@ void mouseclick(int button, int state, int x, int y)
 	set_texture();
 }
 
-void resize(int w, int h)
+void resize (int w, int h)
 {
 	printf("resize %d %d\n", w, h);
 	width = w;
@@ -313,12 +335,12 @@ void resize(int w, int h)
 	set_texture();
 }
 
-void init_gfx(int *c, char **v)
+void init_gfx (int *c, char **v)
 {
 	glutInit(c, v);
     
 	glutInitDisplayMode(GLUT_RGB);
-	glutInitWindowSize(1336, 768); //glutInitWindowSize(640, 480);
+	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
     
     gwin = glutCreateWindow("Mandelbrot");
     
@@ -330,7 +352,7 @@ void init_gfx(int *c, char **v)
 	set_texture();
 }
 
-int main(int c, char **v)
+int main (int c, char **v)
 {
 	init_gfx(&c, v);
 	printf("keys:\n\t"
