@@ -38,13 +38,21 @@ int gwin;
 GLuint texture;
 int width, height;
 int tex_w, tex_h;
+
 double scale = 1./256;
-double cx = -.6, cy = 0;
+double cx = 0, cy = 0;
 int color_rotate = 0;
 int saturation = 1;
 int invert = 0;
 int max_iter = 128;
 int mandel_min, mandel_max;
+
+int julia = 0;
+// quadratic polynomial to evaluate
+int fz = 1;
+// constant of the quadratic polynomial
+double vr = 0.0;
+double vi = 0.0;
 
 void printtext(int x, int y, const char *string);
 
@@ -180,19 +188,15 @@ void *calc_mandel (void *p)
     int blockSize = height / NUMBER_OF_THREADS;
     int myThreadNum = *(int *) p;
     
-    double vr = 0.285;
-	double vi = 0.01;
-    
     
 	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++) {
 		px = tex[i];
-		y = (i - height/2) * scale + cy;
+		y = (i - height / 2) * scale + cy;
         
 		for (j = 0; j < width; j++, px++) {
-			x = (j - width/2) * scale + cx;
+			x = (j - width / 2) * scale + cx;
 			iter = 0;
             
-            int julia = 1;
             
             if (julia) {
                 varZ = x + y * I;
@@ -204,10 +208,15 @@ void *calc_mandel (void *p)
             
             z2 = 0;
 			for (iter = 0; iter < max_iter && z2 < 4; iter++) {
-                
-                varZ = (varZ * varZ) + varC;
-                //varZ = (varZ * varZ * varZ * varZ * varZ * varZ) + varC; // 0.590
-                //varZ = cexp(varZ * varZ * varZ) + varC;
+                switch (fz) {
+                    case 1:
+                        varZ = (varZ * varZ) + varC;
+                        break;
+                    case 2:
+                        varZ = cexp(varZ * varZ * varZ) + varC;
+                    default:
+                        break;
+                }
                 
 				z2 = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
 			}
@@ -276,75 +285,158 @@ void set_texture ()
 void keypress (unsigned char key, int x, int y)
 {
 	switch(key) {
-        case 'q':
-            glFinish();
-			glutDestroyWindow(gwin);
-			return;
-            
-        case 27:
+            /* Reset */
+        case 27: // esc
             scale = 1./256;
-            cx = -.6;
-            cy = 0;
+            cx = 0.0;
+            cy = 0.0;
             break;
-            
-        case 'r':
-            color_rotate = (color_rotate + 1) % 6;
-			break;
-            
-        case '>': case '.':
+        
+            /* Write image to file */
+        case 'p':
+            screen_dump();
+            return;
+        
+            /* Max iterations */
+        case '.':
 			max_iter += 128;
 			if (max_iter > 1 << 15) {
                 max_iter = 1 << 15;
             }
 			printf("max iter: %d\n", max_iter);
 			break;
-            
-        case '<': case ',':
+        case ',':
 			max_iter -= 128;
 			if (max_iter < 128) {
                 max_iter = 128;
             }
 			printf("max iter: %d\n", max_iter);
 			break;
-            
-        case 'c':
-            saturation = 1 - saturation;
+        case ':':
+			max_iter += 8;
+			if (max_iter > 1 << 15) {
+                max_iter = 1 << 15;
+            }
+			printf("max iter: %d\n", max_iter);
 			break;
-            
-        case 'p':
-            screen_dump();
-            return;
-            
+        case ';':
+			max_iter -= 8;
+			if (max_iter < 128) {
+                max_iter = 128;
+            }
+			printf("max iter: %d\n", max_iter);
+			break;
         case 'z':
             max_iter = 4096;
             break;
-            
         case 'x':
             max_iter = 128;
             break;
         
+            /* Shift */
         case 'a':
-            cx -= 4 * scale;
+            cx -= 50 * scale;
             break;
         case 'd':
-            cx += 4 * scale;
+            cx += 50 * scale;
             break;
         case 's':
-            cy -= 4 * scale;
+            cy -= 50 * scale;
             break;
         case 'w':
+            cy += 50 * scale;
+            break;
+        case 'A':
+            cx -= 4 * scale;
+            break;
+        case 'D':
+            cx += 4 * scale;
+            break;
+        case 'S':
+            cy -= 4 * scale;
+            break;
+        case 'W':
             cy += 4 * scale;
             break;
         
+            /* Scale */
         case '-':
             scale *= 2;
             break;
         case '+':
             scale /= 2;
             break;
-            
+        case '_':
+            scale *= 1.05;
+            break;
+        case '*':
+            scale /= 1.05;
+            break;
+        
+            /* Invert colors */
         case ' ':
             invert = !invert;
+            break;
+            /* Monochromatic */
+        case 'c':
+            saturation = 1 - saturation;
+			break;
+            /* Color rotation */
+        case 'r':
+            color_rotate = (color_rotate + 1) % 6;
+			break;
+        
+            /* Change fractal */
+        case '1':
+            fz = 1;
+            julia = 0;
+            
+            vr = 0.0;
+            vi = 0.0;
+            
+            scale = 1./256;
+            cx = 0;
+            cy = 0;
+            max_iter = 128;
+            break;
+        case '2':
+            fz = 1;
+            julia = 1;
+            
+            vr = 0.285;
+            vi = 0.01;
+            
+            scale = 1./256;
+            cx = 0;
+            cy = 0;
+            max_iter = 128;
+            break;
+        case '3':
+            fz = 1;
+            julia = 1;
+            
+            vr = 1.0 - 1.6180339887;
+            vi = 0.0;
+            
+            scale = 1./256;
+            cx = 0;
+            cy = 0;
+            max_iter = 128;
+            break;
+        case '4':
+            fz = 1;
+            julia = 1;
+            
+            vr = -0.8;
+            vi = 0.156;
+            
+            scale = 1./256;
+            cx = 0;
+            cy = 0;
+            max_iter = 128;
+            break;
+        default:
+            break;
 	}
     
 	set_texture();
@@ -410,7 +502,8 @@ int main (int c, char **v)
            "r: color rotation\n\t"
            "c: monochrome\n\t"
            "s: screen dump\n\t"
-           "<, >: decrease/increase max iteration\n\t"
+           ",: decrease max iteration\n\t"
+           ".: increase max iteration\n\t"
            "q: quit\n\tmouse buttons to zoom\n\n");
     
 	glutMainLoop();
