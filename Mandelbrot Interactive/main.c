@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <pthread.h>
+#include <complex.h>
+#include <string.h>
 
 #ifdef __APPLE__
     #include <OpenGL/gl.h>
@@ -41,8 +43,10 @@ double cx = -.6, cy = 0;
 int color_rotate = 0;
 int saturation = 1;
 int invert = 0;
-int max_iter = 8;
+int max_iter = 128;
 int mandel_min, mandel_max;
+
+void printtext(int x, int y, const char *string);
 
 void render ()
 {
@@ -132,14 +136,53 @@ void hsv_to_rgb (int hue, int min, int max, rgb_t *p)
 	}
 }
 
+
+
+void printtext(int x, int y, const char *string)
+{
+    printf("%s\n", string);
+    //(x,y) is from the bottom left of the window
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1.0f, 1.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glPushAttrib(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glRasterPos2i(x,y);
+    int i, len;
+    len = (int) strlen(string);
+    for (i = 0; i < len; i++)
+    {
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, string[i]);
+        printf("%c\n", string[i]);
+    }
+    glPopAttrib();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
+
+
+
 void *calc_mandel (void *p)
 {
 	int i, j, iter;
 	rgb_t *px;
-	double x, y, zx, zy, zx2, zy2;
+	double x, y, z2;
+    
+    double _Complex varZ;
+	double _Complex varC;
     
     int blockSize = height / NUMBER_OF_THREADS;
     int myThreadNum = *(int *) p;
+    
+    double vr = 0.285;
+	double vi = 0.01;
+    
     
 	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++) {
 		px = tex[i];
@@ -149,16 +192,24 @@ void *calc_mandel (void *p)
 			x = (j - width/2) * scale + cx;
 			iter = 0;
             
-			zx = hypot(x - .25, y);
-			if (x < zx - 2 * zx * zx + .25) iter = max_iter;
-			if ((x + 1)*(x + 1) + y * y < 1/16) iter = max_iter;
+            int julia = 1;
             
-			zx = zy = zx2 = zy2 = 0;
-			for (; iter < max_iter && zx2 + zy2 < 4; iter++) {
-				zy = 2 * zx * zy + y;
-				zx = zx2 - zy2 + x;
-				zx2 = zx * zx;
-				zy2 = zy * zy;
+            if (julia) {
+                varZ = x + y * I;
+                varC = vr + vi * I;
+            } else {
+                varZ = vr + vi * I;
+                varC = x + y * I;
+            }
+            
+            z2 = 0;
+			for (iter = 0; iter < max_iter && z2 < 4; iter++) {
+                
+                varZ = (varZ * varZ) + varC;
+                //varZ = (varZ * varZ * varZ * varZ * varZ * varZ) + varC; // 0.590
+                //varZ = cexp(varZ * varZ * varZ) + varC;
+                
+				z2 = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
 			}
             
 			if (iter < mandel_min) mandel_min = iter;
