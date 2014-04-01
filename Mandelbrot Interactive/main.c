@@ -54,7 +54,33 @@ int fz = 1;
 double vr = 0.0;
 double vi = 0.0;
 
-void printtext(int x, int y, const char *string);
+void printtext(int x, int y, const char *string)
+{
+    printf("%s\n", string);
+    //(x,y) is from the bottom left of the window
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1.0f, 1.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glPushAttrib(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glRasterPos2i(x,y);
+    int i, len;
+    len = (int) strlen(string);
+    for (i = 0; i < len; i++)
+    {
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, string[i]);
+        printf("%c\n", string[i]);
+    }
+    glPopAttrib();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
 
 void render ()
 {
@@ -144,38 +170,6 @@ void hsv_to_rgb (int hue, int min, int max, rgb_t *p)
 	}
 }
 
-
-
-void printtext(int x, int y, const char *string)
-{
-    printf("%s\n", string);
-    //(x,y) is from the bottom left of the window
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1.0f, 1.0f);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glPushAttrib(GL_DEPTH_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glRasterPos2i(x,y);
-    int i, len;
-    len = (int) strlen(string);
-    for (i = 0; i < len; i++)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, string[i]);
-        printf("%c\n", string[i]);
-    }
-    glPopAttrib();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-}
-
-
-
 void *calc_mandel (void *p)
 {
 	int i, j, iter;
@@ -213,7 +207,7 @@ void *calc_mandel (void *p)
                         varZ = (varZ * varZ) + varC;
                         break;
                     case 2:
-                        varZ = cexp(varZ * varZ * varZ) + varC;
+                        varZ = cexp(cpow(varZ, 3)) + varC;
                     default:
                         break;
                 }
@@ -328,9 +322,11 @@ void keypress (unsigned char key, int x, int y)
 			break;
         case 'z':
             max_iter = 4096;
+            printf("max iter: %d\n", max_iter);
             break;
         case 'x':
             max_iter = 128;
+            printf("max iter: %d\n", max_iter);
             break;
         
             /* Shift */
@@ -434,6 +430,44 @@ void keypress (unsigned char key, int x, int y)
             cx = 0;
             cy = 0;
             max_iter = 128;
+            break;
+        case '5':
+            fz = 2;
+            julia = 1;
+            
+            vr = -0.621;
+            vi = 0.0;
+            
+            scale = 1./256;
+            cx = 0;
+            cy = 0;
+            max_iter = 128;
+            break;
+            
+            /* Increment|decrement the constant */
+        case 'u':
+            vr *= 1.001;
+            printf("vr: %f\n", vr);
+            break;
+        case 'i':
+            vr /= 1.001;
+            printf("vr: %f\n", vr);
+            break;
+        case 'j':
+            vi *= 1.001;
+            printf("vi: %f\n", vi);
+            break;
+        case 'k':
+            vi /= 1.001;
+            printf("vi: %f\n", vi);
+            break;
+        case '\'':
+            vr *= -1;
+            printf("vi: %f\n", vr);
+            break;
+        case '?':
+            vi *= -1;
+            printf("vi: %f\n", vi);
             break;
         default:
             break;
