@@ -30,6 +30,8 @@
 #define WINDOW_WIDTH        1330
 #define WINDOW_HEIGHT       800
 
+#define DIFF_PRECISION      0.001
+
 void set_texture ();
 
 typedef struct {unsigned char r, g, b;} rgb_t;
@@ -48,11 +50,34 @@ int max_iter = 128;
 int mandel_min, mandel_max;
 
 int julia = 0;
-// quadratic polynomial to evaluate
+int bs = 0;
+// function to evaluate
 int fz = 1;
-// constant of the quadratic polynomial
+// constant of the function to evaluate
 double vr = 0.0;
 double vi = 0.0;
+
+// glut functions
+int valuemouse = 0;
+int mouseX = 0;
+int mouseY = 0;
+
+int zoom = 0;
+double vrpivot = 0;
+double vipivot = 0;
+
+
+float target_cx = 0.0;
+float target_cy = 0.0;
+
+float target_scale = 1./256;
+float target_vr = 0;
+float target_vi = 0;
+
+int lock_vr = 0;
+int lock_vi = 0;
+
+int vprecision = 8;
 
 void printtext(int x, int y, const char *string)
 {
@@ -174,7 +199,7 @@ void *calc_mandel (void *p)
 {
 	int i, j, iter;
 	rgb_t *px;
-	double x, y, z2;
+	double x, y, lenZ;
     
     double _Complex varZ;
 	double _Complex varC;
@@ -183,11 +208,13 @@ void *calc_mandel (void *p)
     int myThreadNum = *(int *) p;
     
     
-	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++) {
+	for (i = myThreadNum * blockSize; i < (myThreadNum + 1) * blockSize; i++)
+    {
 		px = tex[i];
 		y = (i - height / 2) * scale + cy;
         
-		for (j = 0; j < width; j++, px++) {
+		for (j = 0; j < width; j++, px++)
+        {
 			x = (j - width / 2) * scale + cx;
 			iter = 0;
             
@@ -196,12 +223,12 @@ void *calc_mandel (void *p)
                 varZ = x + y * I;
                 varC = vr + vi * I;
             } else {
-                varZ = vr + vi * I;
+                varZ = 0;
                 varC = x + y * I;
             }
             
-            z2 = 0;
-			for (iter = 0; iter < max_iter && z2 < 4; iter++) {
+			for (iter = 0, lenZ = 0; iter < max_iter && lenZ < 4; iter++)
+            {
                 switch (fz) {
                     case 1:
                         varZ = (varZ * varZ) + varC;
@@ -212,12 +239,16 @@ void *calc_mandel (void *p)
                         break;
                 }
                 
-				z2 = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
+				lenZ = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
 			}
             
-			if (iter < mandel_min) mandel_min = iter;
-			if (iter > mandel_max) mandel_max = iter;
-			*(unsigned short *)px = iter;
+			if (iter < mandel_min)
+                mandel_min = iter;
+			
+            if (iter > mandel_max)
+                mandel_max = iter;
+			
+            *(unsigned short *)px = iter;
 		}
 	}
     
@@ -331,42 +362,42 @@ void keypress (unsigned char key, int x, int y)
         
             /* Shift */
         case 'a':
-            cx -= 50 * scale;
+            target_cx -= 50 * scale;
             break;
         case 'd':
-            cx += 50 * scale;
+            target_cx += 50 * scale;
             break;
         case 's':
-            cy -= 50 * scale;
+            target_cy -= 50 * scale;
             break;
         case 'w':
-            cy += 50 * scale;
+            target_cy += 50 * scale;
             break;
         case 'A':
-            cx -= 4 * scale;
+            target_cx -= 4 * scale;
             break;
         case 'D':
-            cx += 4 * scale;
+            target_cx += 4 * scale;
             break;
         case 'S':
-            cy -= 4 * scale;
+            target_cy -= 4 * scale;
             break;
         case 'W':
-            cy += 4 * scale;
+            target_cy += 4 * scale;
             break;
         
             /* Scale */
         case '-':
-            scale *= 2;
+            target_scale *= 2;
             break;
         case '+':
-            scale /= 2;
+            target_scale /= 2;
             break;
         case '_':
-            scale *= 1.05;
+            target_scale *= 1.05;
             break;
         case '*':
-            scale /= 1.05;
+            target_scale /= 1.05;
             break;
         
             /* Invert colors */
@@ -386,6 +417,7 @@ void keypress (unsigned char key, int x, int y)
         case '1':
             fz = 1;
             julia = 0;
+            bs = 0;
             
             vr = 0.0;
             vi = 0.0;
@@ -398,9 +430,10 @@ void keypress (unsigned char key, int x, int y)
         case '2':
             fz = 1;
             julia = 1;
+            bs = 0;
             
-            vr = 0.285;
-            vi = 0.01;
+            target_vr = 0.285;
+            target_vi = 0.01;
             
             scale = 1./256;
             cx = 0;
@@ -410,9 +443,10 @@ void keypress (unsigned char key, int x, int y)
         case '3':
             fz = 1;
             julia = 1;
+            bs = 0;
             
-            vr = 1.0 - 1.6180339887;
-            vi = 0.0;
+            target_vr = 1.0 - 1.6180339887;
+            target_vi = 0.0;
             
             scale = 1./256;
             cx = 0;
@@ -422,9 +456,10 @@ void keypress (unsigned char key, int x, int y)
         case '4':
             fz = 1;
             julia = 1;
+            bs = 0;
             
-            vr = -0.8;
-            vi = 0.156;
+            target_vr = -0.8;
+            target_vi = 0.156;
             
             scale = 1./256;
             cx = 0;
@@ -434,6 +469,20 @@ void keypress (unsigned char key, int x, int y)
         case '5':
             fz = 2;
             julia = 1;
+            bs = 0;
+            
+            target_vr = -0.621;
+            target_vi = 0.0;
+            
+            scale = 1./256;
+            cx = 0;
+            cy = 0;
+            max_iter = 128;
+            break;
+        case '6':
+            fz = 1;
+            julia = 0;
+            bs = 1;
             
             vr = -0.621;
             vi = 0.0;
@@ -476,28 +525,119 @@ void keypress (unsigned char key, int x, int y)
 	set_texture();
 }
 
+//void mouseclick (int button, int state, int x, int y)
+//{
+//	if (state != GLUT_UP) return;
+//    
+//	cx += (x - width / 2) * scale;
+//	cy -= (y - height / 2) * scale;
+//    
+//	switch(button) {
+//        case GLUT_LEFT_BUTTON: /* zoom in */
+//            if (scale > fabs(x) * 1e-16 && scale > fabs(y) * 1e-16) {
+//                scale /= 2;
+//            }
+//            break;
+//            
+//        case GLUT_RIGHT_BUTTON: /* zoom out */
+//            scale *= 2;
+//            break;
+//            
+//            /* any other button recenters */
+//	}
+//    
+//	set_texture();
+//}
+
 void mouseclick (int button, int state, int x, int y)
 {
-	if (state != GLUT_UP) return;
+	mouseX = x;
+	mouseY = y;
+	if (button == GLUT_LEFT_BUTTON) {
+		if (state == GLUT_DOWN) {
+			if(glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
+				valuemouse = 1;
+				vrpivot = -(float) x / width * scale;
+				vipivot = -(float) y / height * scale;
+			} else {
+				zoom = 1;
+			}
+        } else {
+            zoom = 0;
+            valuemouse = 0;
+        }
+	} else if (button == GLUT_RIGHT_BUTTON) {
+		if (state == GLUT_DOWN)
+			zoom = -1;
+		else
+			zoom = 0;
+	} else if (button == GLUT_MIDDLE_BUTTON) {
+		if (state == GLUT_DOWN) {
+			valuemouse = 1;
+			vrpivot = -(double) x / width * scale;
+			vipivot = -(double) y / height * scale;
+		} else {
+			valuemouse = 0;
+		}
+	}
+}
+
+void mousemove (int x, int y)
+{
+	mouseX = x;
+	mouseY = y;
+}
+
+void mousedrag (int x, int y)
+{
+	mouseX = x;
+	mouseY = y;
+	/*if (valuemouse) {
+	 target_vr = vrpivot + (float)x / XDIM * scale;
+	 target_vi = vipivot + (float)y / YDIM * scale;
+	 }*/
+}
+
+void animate ()
+{
+    double scale_diff = 0;
+    double cx_diff = 0;
+    double cy_diff = 0;
+    double vr_diff = 0;
+    double vi_diff = 0;
     
-	cx += (x - width / 2) * scale;
-	cy -= (y - height / 2) * scale;
-    
-	switch(button) {
-        case GLUT_LEFT_BUTTON: /* zoom in */
-            if (scale > fabs(x) * 1e-16 && scale > fabs(y) * 1e-16) {
-                scale /= 2;
-            }
-            break;
-            
-        case GLUT_RIGHT_BUTTON: /* zoom out */
-            scale *= 2;
-            break;
-            
-            /* any other button recenters */
+	if (zoom == 1) {
+		target_scale /= 1.015;
+	} else if (zoom == -1) {
+		target_scale *= 1.015;
+	}
+	if (zoom == -1 || zoom == 1) {
+		target_cx += (mouseX - width / 2.0) * scale / 4;
+		target_cy -= (mouseY - height / 2.0) * scale / 4;
+	}
+	if (valuemouse) {
+		if(!lock_vr) target_vr += (vrpivot + (float) mouseX / width * scale) / vprecision;
+		if(!lock_vi) target_vi += (vipivot + (float) mouseY / height * scale) / vprecision;
 	}
     
-	set_texture();
+	vr += (target_vr - vr) / 8;
+	vi += (target_vi - vi) / 8;
+	cx = (target_cx - cx) / 8;
+	cy = (target_cy - cy) / 8;
+	scale += (target_scale - scale) / 4;
+//	max_iterations += (target_max_iterations - max_iterations) / 16;
+    
+    scale_diff = fabs(fabs(scale) - fabs(target_scale));
+    vr_diff = fabs(fabs(vr) - fabs(target_vr));
+    vi_diff = fabs(fabs(vi) - fabs(target_vi));
+    cx_diff = fabs(fabs(cx) - fabs(target_cx));
+    cy_diff = fabs(fabs(cy) - fabs(target_cy));
+    
+	if (scale_diff > DIFF_PRECISION || vr_diff > DIFF_PRECISION || vi_diff > DIFF_PRECISION
+        || cx_diff > DIFF_PRECISION || cy_diff > DIFF_PRECISION) {
+		set_texture();
+		glutPostRedisplay();
+	}
 }
 
 void resize (int w, int h)
@@ -524,6 +664,9 @@ void init_gfx (int *c, char **v)
 	glutDisplayFunc(render);
 	glutKeyboardFunc(keypress);
 	glutMouseFunc(mouseclick);
+    glutIdleFunc(animate);
+    glutPassiveMotionFunc(mousemove);
+	glutMotionFunc(mousedrag);
 	glutReshapeFunc(resize);
 	glGenTextures(1, &texture);
 	set_texture();
