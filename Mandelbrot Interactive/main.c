@@ -27,6 +27,7 @@
 #endif
 
 #define NUMBER_OF_THREADS   8
+
 #define WINDOW_WIDTH        1330
 #define WINDOW_HEIGHT       800
 
@@ -67,44 +68,40 @@ double vrpivot = 0;
 double vipivot = 0;
 
 
-float target_cx = 0.0;
-float target_cy = 0.0;
+double target_cx = 0.0;
+double target_cy = 0.0;
 
-float target_scale = 1./256;
-float target_vr = 0;
-float target_vi = 0;
+double target_scale = 1./256;
+double target_vr = 0;
+double target_vi = 0;
 
 int lock_vr = 0;
 int lock_vi = 0;
 
 int vprecision = 8;
 
-void printtext(int x, int y, const char *string)
+void printtext (int x, int y, const char *str)
 {
-    printf("%s\n", string);
-    //(x,y) is from the bottom left of the window
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1.0f, 1.0f);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glPushAttrib(GL_DEPTH_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glRasterPos2i(x,y);
-    int i, len;
-    len = (int) strlen(string);
-    for (i = 0; i < len; i++)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, string[i]);
-        printf("%c\n", string[i]);
-    }
-    glPopAttrib();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+	int len = (int) strlen(str);
+	unsigned int i;
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1.0f, 1.0f);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glPushAttrib(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
+	glRasterPos2i(x, y);
+	for (i = 0; (unsigned) i < len; i++) {
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, str[i]);
+	}
+	glPopAttrib();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
 }
 
 void render ()
@@ -315,6 +312,10 @@ void keypress (unsigned char key, int x, int y)
             scale = 1./256;
             cx = 0.0;
             cy = 0.0;
+            
+            target_scale = 1./256;
+            target_cx = 0.0;
+            target_cy = 0.0;
             break;
         
             /* Write image to file */
@@ -525,30 +526,6 @@ void keypress (unsigned char key, int x, int y)
 	set_texture();
 }
 
-//void mouseclick (int button, int state, int x, int y)
-//{
-//	if (state != GLUT_UP) return;
-//    
-//	cx += (x - width / 2) * scale;
-//	cy -= (y - height / 2) * scale;
-//    
-//	switch(button) {
-//        case GLUT_LEFT_BUTTON: /* zoom in */
-//            if (scale > fabs(x) * 1e-16 && scale > fabs(y) * 1e-16) {
-//                scale /= 2;
-//            }
-//            break;
-//            
-//        case GLUT_RIGHT_BUTTON: /* zoom out */
-//            scale *= 2;
-//            break;
-//            
-//            /* any other button recenters */
-//	}
-//    
-//	set_texture();
-//}
-
 void mouseclick (int button, int state, int x, int y)
 {
 	mouseX = x;
@@ -557,8 +534,8 @@ void mouseclick (int button, int state, int x, int y)
 		if (state == GLUT_DOWN) {
 			if(glutGetModifiers() == GLUT_ACTIVE_SHIFT) {
 				valuemouse = 1;
-				vrpivot = -(float) x / width * scale;
-				vipivot = -(float) y / height * scale;
+				vrpivot = -(double) x / width * scale;
+				vipivot = -(double) y / height * scale;
 			} else {
 				zoom = 1;
 			}
@@ -607,17 +584,17 @@ void animate ()
     double vi_diff = 0;
     
 	if (zoom == 1) {
-		target_scale /= 1.015;
+		target_scale /= 1.08;
 	} else if (zoom == -1) {
-		target_scale *= 1.015;
+		target_scale *= 1.08;
 	}
 	if (zoom == -1 || zoom == 1) {
-		target_cx += (mouseX - width / 2.0) * scale / 4;
-		target_cy -= (mouseY - height / 2.0) * scale / 4;
+		target_cx += (mouseX - width / 2.0) * scale / 1;
+		target_cy -= (mouseY - height / 2.0) * scale / 1;
 	}
 	if (valuemouse) {
-		if(!lock_vr) target_vr += (vrpivot + (float) mouseX / width * scale) / vprecision;
-		if(!lock_vi) target_vi += (vipivot + (float) mouseY / height * scale) / vprecision;
+		if(!lock_vr) target_vr += (vrpivot + (double) mouseX / width * scale) / vprecision;
+		if(!lock_vi) target_vi += (vipivot + (double) mouseY / height * scale) / vprecision;
 	}
     
 	vr += (target_vr - vr) / 8;
@@ -666,7 +643,7 @@ void init_gfx (int *c, char **v)
 	glutMouseFunc(mouseclick);
     glutIdleFunc(animate);
     glutPassiveMotionFunc(mousemove);
-	glutMotionFunc(mousedrag);
+    glutMotionFunc(mousedrag);
 	glutReshapeFunc(resize);
 	glGenTextures(1, &texture);
 	set_texture();
