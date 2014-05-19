@@ -303,7 +303,7 @@ void hsv_to_rgb (int hue, int min, int max, rgb_t *p)
 	}
 }
 
-void *calc_mandel (void *p)
+DWORD WINAPI calc_mandel(LPVOID p)
 {
 	int i, j, iter;
 	rgb_t *px;
@@ -363,7 +363,7 @@ void *calc_mandel (void *p)
 		for (j = 0, px = tex[i]; j < width; j++, px++)
 			hsv_to_rgb(*(unsigned short *)px, mandel_min, mandel_max, px);
     
-    pthread_exit(0);
+	return 0;
 }
 
 void alloc_tex ()
@@ -384,9 +384,8 @@ void alloc_tex ()
 
 void set_texture ()
 {
-    int hThreads[NUMBER_OF_THREADS];
-	pthread_t tId[NUMBER_OF_THREADS];
-    int tNum[NUMBER_OF_THREADS];
+    HANDLE hThreads[NUMBER_OF_THREADS];
+	int tNum[NUMBER_OF_THREADS] = {0, 1, 2, 3};
 	int i;
     
 	alloc_tex();
@@ -395,15 +394,13 @@ void set_texture ()
     mandel_min = max_iter;
     
     // Create the threads
-	for (i = 0; i < NUMBER_OF_THREADS; i++) {
+    for (i = 0; i < NUMBER_OF_THREADS; i++) {
         tNum[i] = i;
-		hThreads[i] = pthread_create(&tId[i], NULL, calc_mandel, &tNum[i]);
+		hThreads[i] = CreateThread(NULL, 0, &calc_mandel, &tNum[i], 0, NULL);
     }
     
     // Wait for all threads to finish
-    for (i = 0; i < NUMBER_OF_THREADS; i++) {
-        pthread_join(tId[i], NULL);
-    }
+	WaitForMultipleObjects(cantidadThreads, &hThreads[0], TRUE, INFINITE);
     
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture);
