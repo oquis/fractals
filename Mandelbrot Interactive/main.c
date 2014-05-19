@@ -28,16 +28,14 @@
 
 #define NUMBER_OF_THREADS   8
 
-#define WINDOW_WIDTH        1330
-#define WINDOW_HEIGHT       800
-
-#define DIFF_PRECISION      0.001
-
-void set_texture ();
+#define WIN_DISP_W  800
+#define WIN_DISP_H  800
+#define WIN_INFO_W  220
+#define WIN_INFO_H  800
 
 typedef struct {unsigned char r, g, b;} rgb_t;
 rgb_t **tex = 0;
-int gwin;
+int gwin_display, gwin_info;
 GLuint texture;
 int width, height;
 int tex_w, tex_h;
@@ -47,26 +45,21 @@ double cx = 0, cy = 0;
 int color_rotate = 0;
 int saturation = 1;
 int invert = 0;
-int max_iter = 128;
 int mandel_min, mandel_max;
 
 int julia = 0;
-int bs = 0;
 // function to evaluate
 int fz = 1;
 // constant of the function to evaluate
 double vr = 0.0;
 double vi = 0.0;
 
-// glut functions
-int valuemouse = 0;
-int mouseX = 0;
-int mouseY = 0;
+int max_iter = 128;
+int target_max_iter = 128;
 
 int zoom = 0;
 double vrpivot = 0;
 double vipivot = 0;
-
 
 double target_cx = 0.0;
 double target_cy = 0.0;
@@ -80,6 +73,17 @@ int lock_vi = 0;
 
 int vprecision = 8;
 
+// glut helper vars
+int valuemouse = 0;
+int mouseX = 0;
+int mouseY = 0;
+double animation_stop = 1;
+int render_num = 0;
+
+
+void set_texture ();
+
+
 void printtext (int x, int y, const char *str)
 {
 	int len = (int) strlen(str);
@@ -87,7 +91,7 @@ void printtext (int x, int y, const char *str)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1.0f, 1.0f);
+	glOrtho(0, WIN_DISP_W, 0, WIN_INFO_H, -1.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
@@ -95,13 +99,120 @@ void printtext (int x, int y, const char *str)
 	glDisable(GL_DEPTH_TEST);
 	glRasterPos2i(x, y);
 	for (i = 0; (unsigned) i < len; i++) {
-		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, str[i]);
+		glutBitmapCharacter(GLUT_BITMAP_8_BY_13, str[i]);
 	}
 	glPopAttrib();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+}
+
+void display ()
+{
+    char lines;
+    int i;
+    int pos_y;
+    
+	char str1[32];
+    char str2[32];
+    char str3[32];
+    char str4[32];
+    char str5[32];
+    char str6[32];
+    char str7[32];
+    
+	snprintf(str1, sizeof(str1), "        vr: %f", vr);
+    snprintf(str2, sizeof(str2), "        vi: %f", vi);
+    snprintf(str3, sizeof(str3), "        cx: %f", cx);
+    snprintf(str4, sizeof(str4), "        cy: %f", cy);
+    snprintf(str5, sizeof(str5), "     scale: %f", scale);
+    snprintf(str6, sizeof(str6), "iterations: %d", max_iter);
+    
+	glClear(GL_COLOR_BUFFER_BIT);
+	glPushAttrib(GL_CURRENT_BIT);
+    glColor3f(1, 0, 0);
+    printtext(0, WIN_INFO_H - 15, "Values:");
+	glColor3f(1, 1, 1);
+	printtext(10, WIN_INFO_H - 30, str1);
+    printtext(10, WIN_INFO_H - 45, str2);
+    printtext(10, WIN_INFO_H - 60, str3);
+    printtext(10, WIN_INFO_H - 75, str4);
+    printtext(10, WIN_INFO_H - 90, str5);
+    printtext(10, WIN_INFO_H - 105, str6);
+    
+    glColor3f(0, 0, 1);
+    snprintf(str7, sizeof(str7), "    render: %d", render_num);
+    printtext(10, WIN_INFO_H - 120, str7);
+    
+    /* Print the key controls */
+    glColor3f(1, 0, 0);
+    printtext(0, WIN_INFO_H - 140, "Keys:");
+    
+    lines = 30;
+    const char *str_keys[30] = {
+        "  esc: reset",
+        "",
+        "    1: mandelbrot set",
+        "    2: julia set z2",
+        "    3: julia set z2",
+        "    4: julia set z2",
+        "    5: julia set z3",
+        "",
+        "space: invert colors",
+        "    r: color rotation",
+        "    c: monochrome",
+        "",
+        "    a: move right",
+        "    s: move up",
+        "    d: move left",
+        "    w: move down",
+        "",
+        "    q: zoom out",
+        "    e: zoom in",
+        "",
+        "    f: decrease real C",
+        "    g: decrease imag C",
+        "    h: increase real C",
+        "    t: increase imag C",
+        "",
+        "    z: dec iterations",
+        "    x: inc iterations",
+        "",
+        "    o: export to CSV",
+        "    p: export to PPM"
+    };
+    
+    glColor3f(1, 1, 1);
+    for(i = lines - 1; i >= 0; i--){
+        pos_y = WIN_INFO_H - 155 - i * 15;
+        printtext(10, pos_y, str_keys[i]);
+    }
+    
+    /* Print the mouse controls */
+    glColor3f(1, 0, 0);
+    printtext(0, WIN_INFO_H - 625, "Mouse:");
+    
+    lines = 8;
+    const char *str_mouse[8] = {
+        "left click:",
+        "    zoom in",
+        "right click:",
+        "    zoom out",
+        "shift+drag (up|down):",
+        "    change imaginary C",
+        "shift+drag (left|right):",
+        "    change real C"
+    };
+    
+    glColor3f(1, 1, 1);
+    for(i = lines - 1; i >= 0; i--){
+        pos_y = WIN_INFO_H - 640 - i * 15;
+        printtext(10, pos_y, str_mouse[i]);
+    }
+    
+	glPopAttrib();
+	glFlush();
 }
 
 void render ()
@@ -215,7 +326,6 @@ void *calc_mandel (void *p)
 			x = (j - width / 2) * scale + cx;
 			iter = 0;
             
-            
             if (julia) {
                 varZ = x + y * I;
                 varC = vr + vi * I;
@@ -300,7 +410,7 @@ void set_texture ()
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, tex_w, tex_h, 0, GL_RGB, GL_UNSIGNED_BYTE, tex[0]);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
+    glutSetWindow(gwin_display);
 	render();
 }
 
@@ -309,57 +419,47 @@ void keypress (unsigned char key, int x, int y)
 	switch(key) {
             /* Reset */
         case 27: // esc
-            scale = 1./256;
-            cx = 0.0;
-            cy = 0.0;
+            scale = target_scale = 1./256;
+            cx = target_cx = 0.0;
+            cy = target_cy = 0.0;
+            vi = target_vi;
+            vr = target_vr;
             
-            target_scale = 1./256;
-            target_cx = 0.0;
-            target_cy = 0.0;
+            set_texture();
+            glutSetWindow(gwin_info);
+            display();
             break;
         
-            /* Write image to file */
+            /* Write image to PPM file */
         case 'p':
             screen_dump();
             return;
         
             /* Max iterations */
-        case '.':
-			max_iter += 128;
-			if (max_iter > 1 << 15) {
-                max_iter = 1 << 15;
+        case 'x':
+			target_max_iter += 128;
+			if (target_max_iter > 1 << 15) {
+                target_max_iter = 1 << 15;
             }
-			printf("max iter: %d\n", max_iter);
-			break;
-        case ',':
-			max_iter -= 128;
-			if (max_iter < 128) {
-                max_iter = 128;
-            }
-			printf("max iter: %d\n", max_iter);
-			break;
-        case ':':
-			max_iter += 8;
-			if (max_iter > 1 << 15) {
-                max_iter = 1 << 15;
-            }
-			printf("max iter: %d\n", max_iter);
-			break;
-        case ';':
-			max_iter -= 8;
-			if (max_iter < 128) {
-                max_iter = 128;
-            }
-			printf("max iter: %d\n", max_iter);
 			break;
         case 'z':
-            max_iter = 4096;
-            printf("max iter: %d\n", max_iter);
-            break;
-        case 'x':
-            max_iter = 128;
-            printf("max iter: %d\n", max_iter);
-            break;
+			target_max_iter -= 128;
+			if (target_max_iter < 128) {
+                target_max_iter = 128;
+            }
+			break;
+        case 'X':
+			target_max_iter += 8;
+			if (target_max_iter > 1 << 15) {
+                target_max_iter = 1 << 15;
+            }
+			break;
+        case 'Z':
+			target_max_iter -= 8;
+			if (target_max_iter < 128) {
+                target_max_iter = 128;
+            }
+			break;
         
             /* Shift */
         case 'a':
@@ -388,50 +488,56 @@ void keypress (unsigned char key, int x, int y)
             break;
         
             /* Scale */
-        case '-':
+        case 'q':
             target_scale *= 2;
             break;
-        case '+':
+        case 'e':
             target_scale /= 2;
             break;
-        case '_':
+        case 'Q':
             target_scale *= 1.05;
             break;
-        case '*':
+        case 'E':
             target_scale /= 1.05;
             break;
         
             /* Invert colors */
         case ' ':
             invert = !invert;
+            set_texture();
             break;
             /* Monochromatic */
         case 'c':
             saturation = 1 - saturation;
+            set_texture();
 			break;
             /* Color rotation */
         case 'r':
             color_rotate = (color_rotate + 1) % 6;
+            set_texture();
 			break;
         
             /* Change fractal */
         case '1':
             fz = 1;
             julia = 0;
-            bs = 0;
             
             vr = 0.0;
             vi = 0.0;
+            target_vr = 0.0;
+            target_vi = 0.0;
             
             scale = 1./256;
             cx = 0;
             cy = 0;
             max_iter = 128;
+            set_texture();
+            glutSetWindow(gwin_info);
+            display();
             break;
         case '2':
             fz = 1;
             julia = 1;
-            bs = 0;
             
             target_vr = 0.285;
             target_vi = 0.01;
@@ -444,7 +550,6 @@ void keypress (unsigned char key, int x, int y)
         case '3':
             fz = 1;
             julia = 1;
-            bs = 0;
             
             target_vr = 1.0 - 1.6180339887;
             target_vi = 0.0;
@@ -457,7 +562,6 @@ void keypress (unsigned char key, int x, int y)
         case '4':
             fz = 1;
             julia = 1;
-            bs = 0;
             
             target_vr = -0.8;
             target_vi = 0.156;
@@ -470,7 +574,6 @@ void keypress (unsigned char key, int x, int y)
         case '5':
             fz = 2;
             julia = 1;
-            bs = 0;
             
             target_vr = -0.621;
             target_vi = 0.0;
@@ -480,50 +583,36 @@ void keypress (unsigned char key, int x, int y)
             cy = 0;
             max_iter = 128;
             break;
-        case '6':
-            fz = 1;
-            julia = 0;
-            bs = 1;
-            
-            vr = -0.621;
-            vi = 0.0;
-            
-            scale = 1./256;
-            cx = 0;
-            cy = 0;
-            max_iter = 128;
-            break;
             
             /* Increment|decrement the constant */
-        case 'u':
-            vr *= 1.001;
-            printf("vr: %f\n", vr);
+        case 'h':
+            target_vr *= 1.01;
             break;
-        case 'i':
-            vr /= 1.001;
-            printf("vr: %f\n", vr);
+        case 'f':
+            target_vr /= 1.01;
             break;
-        case 'j':
-            vi *= 1.001;
-            printf("vi: %f\n", vi);
+        case 't':
+            target_vi *= 1.01;
             break;
-        case 'k':
-            vi /= 1.001;
-            printf("vi: %f\n", vi);
+        case 'g':
+            target_vi /= 1.01;
             break;
-        case '\'':
-            vr *= -1;
-            printf("vi: %f\n", vr);
+        case 'H':
+            target_vr *= 1.001;
             break;
-        case '?':
-            vi *= -1;
-            printf("vi: %f\n", vi);
+        case 'F':
+            target_vr /= 1.001;
             break;
+        case 'T':
+            target_vi *= 1.005;
+            break;
+        case 'G':
+            target_vi /= 1.005;
+            break;
+            
         default:
             break;
 	}
-    
-	set_texture();
 }
 
 void mouseclick (int button, int state, int x, int y)
@@ -602,19 +691,30 @@ void animate ()
 	cx = (target_cx - cx) / 8;
 	cy = (target_cy - cy) / 8;
 	scale += (target_scale - scale) / 4;
-//	max_iterations += (target_max_iterations - max_iterations) / 16;
+	max_iter += (target_max_iter - max_iter) / 2;
     
     scale_diff = fabs(fabs(scale) - fabs(target_scale));
     vr_diff = fabs(fabs(vr) - fabs(target_vr));
     vi_diff = fabs(fabs(vi) - fabs(target_vi));
-    cx_diff = fabs(fabs(cx) - fabs(target_cx));
-    cy_diff = fabs(fabs(cy) - fabs(target_cy));
-    
-	if (scale_diff > DIFF_PRECISION || vr_diff > DIFF_PRECISION || vi_diff > DIFF_PRECISION
-        || cx_diff > DIFF_PRECISION || cy_diff > DIFF_PRECISION) {
+    cx_diff = fabs(fabs(cx) - fabs(target_cx)) * scale;
+    cy_diff = fabs(fabs(cy) - fabs(target_cy)) * scale;
+    animation_stop = .01 * scale;
+	if (scale_diff > animation_stop || vr_diff > animation_stop || vi_diff > animation_stop
+        || cx_diff > animation_stop || cy_diff > animation_stop
+        || target_max_iter != max_iter) {
+        
 		set_texture();
 		glutPostRedisplay();
+        
+        glutSetWindow(gwin_info);
+        display();
+        
+        ++render_num;
 	}
+    
+//    printf("cx: %f\n", vr);
+//    printf("tg: %f\n", target_vr);
+//    printf("df: %f\n", vr_diff);
 }
 
 void resize (int w, int h)
@@ -632,12 +732,23 @@ void resize (int w, int h)
 void init_gfx (int *c, char **v)
 {
 	glutInit(c, v);
-    
+    // General windows settings
 	glutInitDisplayMode(GLUT_RGB);
-	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
     
-    gwin = glutCreateWindow("Mandelbrot");
+    // Info window settings
+    glutInitWindowSize(WIN_INFO_W, WIN_INFO_H);
+    glutInitWindowPosition(0, 0);
+    // Create the window to display program and fractal information
+    gwin_info = glutCreateWindow("Info");
+    // Info window callbacks
+	glutDisplayFunc(display);
     
+    // Display window settings
+	glutInitWindowSize(WIN_DISP_W, WIN_DISP_H);
+    glutInitWindowPosition(WIN_INFO_W + 5, 0);
+    // Create the window to display the fractals
+    gwin_display = glutCreateWindow("Display");
+    // Display window callbacks
 	glutDisplayFunc(render);
 	glutKeyboardFunc(keypress);
 	glutMouseFunc(mouseclick);
@@ -646,19 +757,13 @@ void init_gfx (int *c, char **v)
     glutMotionFunc(mousedrag);
 	glutReshapeFunc(resize);
 	glGenTextures(1, &texture);
+    // Generate the fractal
 	set_texture();
 }
 
 int main (int c, char **v)
 {
 	init_gfx(&c, v);
-	printf("keys:\n\t"
-           "r: color rotation\n\t"
-           "c: monochrome\n\t"
-           "s: screen dump\n\t"
-           ",: decrease max iteration\n\t"
-           ".: increase max iteration\n\t"
-           "q: quit\n\tmouse buttons to zoom\n\n");
     
 	glutMainLoop();
 	return 0;
