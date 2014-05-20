@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "540DB1CA18C650930059821E"
                BuildableName = "Mandelbrot Interactive"
-               BlueprintName = "Mandelbrot Interactive"
-               ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+               BlueprintName = "Fractal Generator"
+               ReferencedContainer = "container:Fractal Generator.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -34,8 +34,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "540DB1CA18C650930059821E"
             BuildableName = "Mandelbrot Interactive"
-            BlueprintName = "Mandelbrot Interactive"
-            ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+            BlueprintName = "Fractal Generator"
+            ReferencedContainer = "container:Fractal Generator.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </TestAction>
@@ -53,8 +53,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "540DB1CA18C650930059821E"
             BuildableName = "Mandelbrot Interactive"
-            BlueprintName = "Mandelbrot Interactive"
-            ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+            BlueprintName = "Fractal Generator"
+            ReferencedContainer = "container:Fractal Generator.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -71,8 +71,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "540DB1CA18C650930059821E"
             BuildableName = "Mandelbrot Interactive"
-            BlueprintName = "Mandelbrot Interactive"
-            ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+            BlueprintName = "Fractal Generator"
+            ReferencedContainer = "container:Fractal Generator.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

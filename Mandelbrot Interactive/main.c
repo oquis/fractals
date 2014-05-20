@@ -80,6 +80,8 @@ int mouseY = 0;
 double animation_stop = 1;
 int render_num = 0;
 
+// threads
+pthread_mutex_t p_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void set_texture ();
 
@@ -349,12 +351,22 @@ void *calc_mandel (void *p)
 				lenZ = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
 			}
             
-			if (iter < mandel_min)
+            
+            
+			if (iter < mandel_min) {
+                pthread_mutex_lock(&p_mutex);
                 mandel_min = iter;
+                pthread_mutex_unlock(&p_mutex);
+            }
 			
-            if (iter > mandel_max)
+            if (iter > mandel_max) {
+                pthread_mutex_lock(&p_mutex);
                 mandel_max = iter;
+                pthread_mutex_unlock(&p_mutex);
+            }
 			
+            
+            
             *(unsigned short *)px = iter;
 		}
 	}
@@ -698,6 +710,7 @@ void animate ()
     vi_diff = fabs(fabs(vi) - fabs(target_vi));
     cx_diff = fabs(fabs(cx) - fabs(target_cx)) * scale;
     cy_diff = fabs(fabs(cy) - fabs(target_cy)) * scale;
+    
     animation_stop = .01 * scale;
 	if (scale_diff > animation_stop || vr_diff > animation_stop || vi_diff > animation_stop
         || cx_diff > animation_stop || cy_diff > animation_stop
