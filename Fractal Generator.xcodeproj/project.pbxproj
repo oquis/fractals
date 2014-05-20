@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		540DB1CF18C650930059821E /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 540DB1CE18C650930059821E /* main.c */; };
+		54294F66192BAF1700FD5BBB /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 54294F65192BAF1700FD5BBB /* main.c */; };
 		544EE88218C9932000348C3C /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 544EE88118C9932000348C3C /* GLUT.framework */; };
 		544EE88418C9937800348C3C /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 544EE88318C9937800348C3C /* OpenGL.framework */; };
 /* End PBXBuildFile section */
@@ -26,7 +26,7 @@
 
 /* Begin PBXFileReference section */
 		540DB1CB18C650930059821E /* Fractal Generator */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "Fractal Generator"; sourceTree = BUILT_PRODUCTS_DIR; };
-		540DB1CE18C650930059821E /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		54294F65192BAF1700FD5BBB /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = "Fractal Generator/main.c"; sourceTree = SOURCE_ROOT; };
 		544EE88118C9932000348C3C /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
 		544EE88318C9937800348C3C /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -65,7 +65,7 @@
 		540DB1CD18C650930059821E /* Fractal Generator */ = {
 			isa = PBXGroup;
 			children = (
-				540DB1CE18C650930059821E /* main.c */,
+				54294F65192BAF1700FD5BBB /* main.c */,
 			);
 			name = "Fractal Generator";
 			path = "Mandelbrot Interactive";
@@ -122,7 +122,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				540DB1CF18C650930059821E /* main.c in Sources */,
+				54294F66192BAF1700FD5BBB /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
