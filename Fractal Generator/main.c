@@ -80,8 +80,8 @@ int mouseY = 0;
 double animation_stop = 1;
 int render_num = 0;
 
-// threads
-pthread_mutex_t p_mutex = PTHREAD_MUTEX_INITIALIZER;
+unsigned char iterations[WIN_DISP_W][WIN_DISP_H];
+
 
 void set_texture ();
 
@@ -255,6 +255,23 @@ void screen_dump ()
 	printf("%s written\n", fn);
 }
 
+void screen_dump_csv(){
+	FILE * fp;
+	int x, y;
+	char *filename = "mandelbrot.csv";
+    
+	fp = fopen(filename, "w");
+    
+	for (y = 0; y < WIN_DISP_H; y++) {
+		fprintf(fp, "%d", iterations[y][x]);
+        for (x = 0; x < WIN_DISP_W; x++) {
+            fprintf(fp, ",%d", iterations[y][x]);
+        }
+        fprintf(fp, "\n");
+	}
+	fclose(fp);
+}
+
 void hsv_to_rgb (int hue, int min, int max, rgb_t *p)
 {
 	if (min == max) {
@@ -351,21 +368,18 @@ void *calc_mandel (void *p)
 				lenZ = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
 			}
             
-            
-            
 			if (iter < mandel_min) {
-                pthread_mutex_lock(&p_mutex);
                 mandel_min = iter;
-                pthread_mutex_unlock(&p_mutex);
             }
 			
             if (iter > mandel_max) {
-                pthread_mutex_lock(&p_mutex);
                 mandel_max = iter;
-                pthread_mutex_unlock(&p_mutex);
             }
-			
             
+            iterations[i][j] = iter;
+            if (iter < 0) {
+                printf("Menor que cero\n");
+            }
             
             *(unsigned short *)px = iter;
 		}
@@ -445,6 +459,11 @@ void keypress (unsigned char key, int x, int y)
             /* Write image to PPM file */
         case 'p':
             screen_dump();
+            return;
+            
+            /* Write image to CSV file */
+        case 'o':
+            screen_dump_csv();
             return;
         
             /* Max iterations */
