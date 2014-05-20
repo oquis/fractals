@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "540DB1CA18C650930059821E"
-               BuildableName = "Mandelbrot Interactive"
-               BlueprintName = "Mandelbrot Interactive"
-               ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+               BuildableName = "Fractal Generator"
+               BlueprintName = "Fractal Generator"
+               ReferencedContainer = "container:Fractal Generator.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "540DB1CA18C650930059821E"
-            BuildableName = "Mandelbrot Interactive"
-            BlueprintName = "Mandelbrot Interactive"
-            ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+            BuildableName = "Fractal Generator"
+            BlueprintName = "Fractal Generator"
+            ReferencedContainer = "container:Fractal Generator.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </TestAction>
@@ -52,9 +52,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "540DB1CA18C650930059821E"
-            BuildableName = "Mandelbrot Interactive"
-            BlueprintName = "Mandelbrot Interactive"
-            ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+            BuildableName = "Fractal Generator"
+            BlueprintName = "Fractal Generator"
+            ReferencedContainer = "container:Fractal Generator.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -70,9 +70,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "540DB1CA18C650930059821E"
-            BuildableName = "Mandelbrot Interactive"
-            BlueprintName = "Mandelbrot Interactive"
-            ReferencedContainer = "container:Mandelbrot Interactive.xcodeproj">
+            BuildableName = "Fractal Generator"
+            BlueprintName = "Fractal Generator"
+            ReferencedContainer = "container:Fractal Generator.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
