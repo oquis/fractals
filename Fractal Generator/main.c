@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <pthread.h>
 #include <complex.h>
 #include <string.h>
 
@@ -152,15 +151,14 @@ void display ()
     glColor3f(1, 0, 0);
     printtext(0, WIN_INFO_H - 140, "Keys:");
     
-    lines = 30;
-    const char *str_keys[30] = {
+    lines = 29;
+    const char *str_keys[29] = {
         "  esc: reset",
         "",
         "    1: mandelbrot set",
         "    2: julia set z2",
         "    3: julia set z2",
         "    4: julia set z2",
-        "    5: julia set z3",
         "",
         "space: invert colors",
         "    r: color rotation",
@@ -194,7 +192,7 @@ void display ()
     
     /* Print the mouse controls */
     glColor3f(1, 0, 0);
-    printtext(0, WIN_INFO_H - 625, "Mouse:");
+    printtext(0, WIN_INFO_H - 600, "Mouse:");
     
     lines = 8;
     const char *str_mouse[8] = {
@@ -210,7 +208,7 @@ void display ()
     
     glColor3f(1, 1, 1);
     for(i = lines - 1; i >= 0; i--){
-        pos_y = WIN_INFO_H - 640 - i * 15;
+        pos_y = WIN_INFO_H - 615 - i * 15;
         printtext(10, pos_y, str_mouse[i]);
     }
     
@@ -260,9 +258,9 @@ void screen_dump_csv(){
 	FILE * fp;
 	int x, y;
 	char *filename = "fractal.csv";
-    
+
 	fp = fopen(filename, "w");
-    
+
 	for (y = 0; y < WIN_DISP_H; y++) {
 		fprintf(fp, "%d", iterations[y][x]);
         for (x = 0; x < WIN_DISP_W; x++) {
@@ -360,8 +358,9 @@ DWORD WINAPI calc_mandel(LPVOID p)
                     case 1:
                         varZ = (varZ * varZ) + varC;
                         break;
-                    case 2:
-                        varZ = cexp(cpow(varZ, 3)) + varC;
+//                    case 2:
+//                        varZ = cexp(cpow(varZ, 3)) + varC;
+//                        break;
                     default:
                         break;
                 }
@@ -369,25 +368,18 @@ DWORD WINAPI calc_mandel(LPVOID p)
 				lenZ = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
 			}
             
-            
-            
+
+
 			if (iter < mandel_min) {
-                pthread_mutex_lock(&p_mutex);
                 mandel_min = iter;
-                pthread_mutex_unlock(&p_mutex);
             }
 			
             if (iter > mandel_max) {
-                pthread_mutex_lock(&p_mutex);
                 mandel_max = iter;
-                pthread_mutex_unlock(&p_mutex);
             }
 			
             iterations[i][j] = iter;
-            if (iter < 0) {
-                printf("Menor que cero\n");
-            }
-            
+
             *(unsigned short *)px = iter;
 		}
 	}
@@ -433,7 +425,7 @@ void set_texture ()
     }
     
     // Wait for all threads to finish
-	WaitForMultipleObjects(cantidadThreads, &hThreads[0], TRUE, INFINITE);
+	WaitForMultipleObjects(NUMBER_OF_THREADS, &hThreads[0], TRUE, INFINITE);
     
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -463,6 +455,11 @@ void keypress (unsigned char key, int x, int y)
             /* Write image to PPM file */
         case 'p':
             screen_dump();
+            return;
+
+            /* Write image to CSV file */
+        case 'o':
+        	screen_dump_csv();
             return;
         
             /* Max iterations */
@@ -601,18 +598,6 @@ void keypress (unsigned char key, int x, int y)
             cy = 0;
             max_iter = 128;
             break;
-        case '5':
-            fz = 2;
-            julia = 1;
-            
-            target_vr = -0.621;
-            target_vi = 0.0;
-            
-            scale = 1./256;
-            cx = 0;
-            cy = 0;
-            max_iter = 128;
-            break;
             
             /* Increment|decrement the constant */
         case 'h':
@@ -728,7 +713,7 @@ void animate ()
     vi_diff = fabs(fabs(vi) - fabs(target_vi));
     cx_diff = fabs(fabs(cx) - fabs(target_cx)) * scale;
     cy_diff = fabs(fabs(cy) - fabs(target_cy)) * scale;
-    
+
     animation_stop = .01 * scale;
 	if (scale_diff > animation_stop || vr_diff > animation_stop || vi_diff > animation_stop
         || cx_diff > animation_stop || cy_diff > animation_stop
@@ -776,7 +761,7 @@ void init_gfx (int *c, char **v)
     
     // Display window settings
 	glutInitWindowSize(WIN_DISP_W, WIN_DISP_H);
-    glutInitWindowPosition(WIN_INFO_W + 5, 0);
+    glutInitWindowPosition(WIN_INFO_W + 30, 0);
     // Create the window to display the fractals
     gwin_display = glutCreateWindow("Display");
     // Display window callbacks

@@ -4,3 +4,9 @@
 #XCode
 project.xcworkspace/
 xcdebugger/
+
+#Windows
+thumbs.db
+
+#Eclipse
+Debug/
