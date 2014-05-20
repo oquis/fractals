@@ -80,7 +80,7 @@ int mouseY = 0;
 double animation_stop = 1;
 int render_num = 0;
 
-unsigned char iterations[WIN_DISP_W][WIN_DISP_H];
+unsigned int iterations[WIN_DISP_W][WIN_DISP_H];
 
 
 void set_texture ();
