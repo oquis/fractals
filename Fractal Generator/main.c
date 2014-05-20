@@ -28,10 +28,10 @@
 
 #define NUMBER_OF_THREADS   8
 
-#define WIN_DISP_W  800
-#define WIN_DISP_H  800
+#define WIN_DISP_W  700
+#define WIN_DISP_H  700
 #define WIN_INFO_W  220
-#define WIN_INFO_H  800
+#define WIN_INFO_H  700
 
 typedef struct {unsigned char r, g, b;} rgb_t;
 rgb_t **tex = 0;
