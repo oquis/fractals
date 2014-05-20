@@ -1,6 +1,6 @@
 //
 //  main.c
-//  Mandelbrot Interactive
+//  Fractal Generator and Navigator
 //
 //  Created by Juan Miguel Rubio on 04/03/14.
 //  Copyright (c) 2014 Juan Miguel Rubio. All rights reserved.
@@ -258,7 +258,7 @@ void screen_dump ()
 void screen_dump_csv(){
 	FILE * fp;
 	int x, y;
-	char *filename = "mandelbrot.csv";
+	char *filename = "fractal.csv";
     
 	fp = fopen(filename, "w");
     
