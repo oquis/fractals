@@ -13,6 +13,8 @@
 #include <complex.h>
 #include <string.h>
 
+#include "threads_helper.h"
+
 #ifdef __APPLE__
     #include <OpenGL/gl.h>
     #include <OpenGL/glu.h>
@@ -25,8 +27,6 @@
     #include <GL/glu.h>
     #include <GL/glut.h>
 #endif
-
-#define NUMBER_OF_THREADS   8
 
 #define WIN_DISP_W  800
 #define WIN_DISP_H  800
@@ -82,6 +82,8 @@ int render_num = 0;
 
 unsigned int iterations[WIN_DISP_W][WIN_DISP_H];
 
+// threads helper vars
+int max_threads = 0;
 
 void set_texture ();
 
@@ -331,7 +333,7 @@ void *calc_mandel (void *p)
     double _Complex varZ;
 	double _Complex varC;
     
-    int blockSize = height / NUMBER_OF_THREADS;
+    int blockSize = height / max_threads;
     int myThreadNum = *(int *) p;
     
     
@@ -410,9 +412,9 @@ void alloc_tex ()
 
 void set_texture ()
 {
-    int hThreads[NUMBER_OF_THREADS];
-	pthread_t tId[NUMBER_OF_THREADS];
-    int tNum[NUMBER_OF_THREADS];
+    int hThreads[max_threads];
+	pthread_t tId[max_threads];
+    int tNum[max_threads];
 	int i;
     
 	alloc_tex();
@@ -421,13 +423,13 @@ void set_texture ()
     mandel_min = max_iter;
     
     // Create the threads
-	for (i = 0; i < NUMBER_OF_THREADS; i++) {
+	for (i = 0; i < max_threads; i++) {
         tNum[i] = i;
 		hThreads[i] = pthread_create(&tId[i], NULL, calc_mandel, &tNum[i]);
     }
     
     // Wait for all threads to finish
-    for (i = 0; i < NUMBER_OF_THREADS; i++) {
+    for (i = 0; i < max_threads; i++) {
         pthread_join(tId[i], NULL);
     }
     
@@ -795,6 +797,8 @@ void init_gfx (int *c, char **v)
 
 int main (int c, char **v)
 {
+    max_threads = get_max_cpus();
+    
 	init_gfx(&c, v);
     
 	glutMainLoop();
