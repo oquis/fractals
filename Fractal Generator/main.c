@@ -27,8 +27,6 @@
     #include <GL/glut.h>
 #endif
 
-#define NUMBER_OF_THREADS   8
-
 #define WIN_DISP_W  700
 #define WIN_DISP_H  700
 #define WIN_INFO_W  220
@@ -425,7 +423,7 @@ void set_texture ()
     }
     
     // Wait for all threads to finish
-	WaitForMultipleObjects(NUMBER_OF_THREADS, &hThreads[0], TRUE, INFINITE);
+	WaitForMultipleObjects(max_threads, &hThreads[0], TRUE, INFINITE);
     
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -713,7 +711,7 @@ void animate ()
     vi_diff = fabs(fabs(vi) - fabs(target_vi));
     cx_diff = fabs(fabs(cx) - fabs(target_cx)) * scale;
     cy_diff = fabs(fabs(cy) - fabs(target_cy)) * scale;
-
+    
     animation_stop = .01 * scale;
 	if (scale_diff > animation_stop || vr_diff > animation_stop || vi_diff > animation_stop
         || cx_diff > animation_stop || cy_diff > animation_stop
