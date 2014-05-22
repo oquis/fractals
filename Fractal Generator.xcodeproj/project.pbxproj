@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		541FF52C192EB23E0087BCF5 /* threads_helper.c in Sources */ = {isa = PBXBuildFile; fileRef = 541FF52A192EB23E0087BCF5 /* threads_helper.c */; };
 		54294F66192BAF1700FD5BBB /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 54294F65192BAF1700FD5BBB /* main.c */; };
 		544EE88218C9932000348C3C /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 544EE88118C9932000348C3C /* GLUT.framework */; };
 		544EE88418C9937800348C3C /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 544EE88318C9937800348C3C /* OpenGL.framework */; };
@@ -27,6 +28,8 @@
 
 /* Begin PBXFileReference section */
 		540DB1CB18C650930059821E /* Fractal Generator */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "Fractal Generator"; sourceTree = BUILT_PRODUCTS_DIR; };
+		541FF52A192EB23E0087BCF5 /* threads_helper.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = threads_helper.c; path = "Fractal Generator/threads_helper.c"; sourceTree = SOURCE_ROOT; };
+		541FF52B192EB23E0087BCF5 /* threads_helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = threads_helper.h; path = "Fractal Generator/threads_helper.h"; sourceTree = SOURCE_ROOT; };
 		54294F65192BAF1700FD5BBB /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = "Fractal Generator/main.c"; sourceTree = SOURCE_ROOT; };
 		544EE88118C9932000348C3C /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
 		544EE88318C9937800348C3C /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -68,6 +71,8 @@
 		540DB1CD18C650930059821E /* Fractal Generator */ = {
 			isa = PBXGroup;
 			children = (
+				541FF52A192EB23E0087BCF5 /* threads_helper.c */,
+				541FF52B192EB23E0087BCF5 /* threads_helper.h */,
 				54294F65192BAF1700FD5BBB /* main.c */,
 				54651B6D192EA5F300E998DE /* threads_helper.h */,
 				54651B6E192EA5FD00E998DE /* threads_helper.c */,
@@ -127,6 +132,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				541FF52C192EB23E0087BCF5 /* threads_helper.c in Sources */,
 				54294F66192BAF1700FD5BBB /* main.c in Sources */,
 				54651B6F192EA5FD00E998DE /* threads_helper.c in Sources */,
 			);
