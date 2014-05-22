@@ -13,6 +13,8 @@
 #include <complex.h>
 #include <string.h>
 
+#include "threads_helper.h"
+
 #ifdef __APPLE__
     #include <OpenGL/gl.h>
     #include <OpenGL/glu.h>
@@ -332,7 +334,7 @@ DWORD WINAPI calc_mandel(LPVOID p)
     double _Complex varZ;
 	double _Complex varC;
     
-    int blockSize = height / NUMBER_OF_THREADS;
+    int blockSize = height / max_threads;
     int myThreadNum = *(int *) p;
     
     
@@ -369,18 +371,12 @@ DWORD WINAPI calc_mandel(LPVOID p)
 				lenZ = creal(varZ) * creal(varZ) + cimag(varZ) * cimag(varZ);
 			}
             
-            
-            
 			if (iter < mandel_min) {
-                pthread_mutex_lock(&p_mutex);
                 mandel_min = iter;
-                pthread_mutex_unlock(&p_mutex);
             }
 			
             if (iter > mandel_max) {
-                pthread_mutex_lock(&p_mutex);
                 mandel_max = iter;
-                pthread_mutex_unlock(&p_mutex);
             }
 			
             iterations[i][j] = iter;
@@ -463,6 +459,11 @@ void keypress (unsigned char key, int x, int y)
             /* Write image to PPM file */
         case 'p':
             screen_dump();
+            return;
+            
+            /* Write image to CSV file */
+        case 'o':
+            screen_dump_csv();
             return;
         
             /* Max iterations */
@@ -794,6 +795,8 @@ void init_gfx (int *c, char **v)
 
 int main (int c, char **v)
 {
+    max_threads = get_max_cpus();
+    
 	init_gfx(&c, v);
     
 	glutMainLoop();
