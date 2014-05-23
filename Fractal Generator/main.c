@@ -82,6 +82,9 @@ int render_num = 0;
 // for csv export
 unsigned int iterations[WIN_DISP_W][WIN_DISP_H];
 
+// threads
+int max_threads = 0;
+
 
 void set_texture ();
 
@@ -407,8 +410,8 @@ void alloc_tex ()
 
 void set_texture ()
 {
-    HANDLE hThreads[NUMBER_OF_THREADS];
-	int tNum[NUMBER_OF_THREADS] = {0, 1, 2, 3};
+    HANDLE hThreads[max_threads];
+	int tNum[max_threads];
 	int i;
     
 	alloc_tex();
@@ -417,7 +420,7 @@ void set_texture ()
     mandel_min = max_iter;
     
     // Create the threads
-    for (i = 0; i < NUMBER_OF_THREADS; i++) {
+    for (i = 0; i < max_threads; i++) {
         tNum[i] = i;
 		hThreads[i] = CreateThread(NULL, 0, &calc_mandel, &tNum[i], 0, NULL);
     }
